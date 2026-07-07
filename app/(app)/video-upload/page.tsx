@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 export default function VideoUpload() {
   const [file, setFile] = useState<File | null>(null);
@@ -17,8 +18,7 @@ export default function VideoUpload() {
     e.preventDefault();
     if (!file) return;
     if (file.size > MAX_FILE_SIZE) {
-      //TODO: add notification
-      alert('File size too large');
+      toast.error('File is too large. Maximum size is 70MB.');
       return;
     }
 
@@ -30,11 +30,12 @@ export default function VideoUpload() {
     formData.append('originalSize', file.size.toString());
 
     try {
-      const response = await axios.post('api/video-upload', formData);
-      router.push('/');
+      await axios.post('/api/video-upload', formData);
+      toast.success('Video uploaded successfully!');
+      router.push('/home');
     } catch (error) {
-      console.log(error);
-      // notification for failure
+      console.error(error);
+      toast.error('Upload failed. Please try again.');
     } finally {
       setIsUploading(false);
     }

@@ -8,7 +8,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-export default cloudinary;
 
 interface CloudinaryUploadResult {
   public_id: string;
@@ -18,10 +17,10 @@ interface CloudinaryUploadResult {
 }
 
 export async function POST(request: NextRequest) {
-  const user = auth();
+  const { userId } = await auth();
 
   try {
-    if (!user) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     if (
