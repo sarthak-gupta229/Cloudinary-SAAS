@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useClerk, useUser } from '@clerk/nextjs';
@@ -11,6 +11,8 @@ import {
   Share2Icon,
   UploadIcon,
   ImageIcon,
+  SunIcon,
+  MoonIcon,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -22,10 +24,29 @@ const sidebarItems = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useClerk();
   const { user } = useUser();
+
+  // Load saved theme or fall back to system preference
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+    const initial = saved ?? preferred;
+    setTheme(initial);
+    document.documentElement.setAttribute('data-theme', initial);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    localStorage.setItem('theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+  };
 
   const handleLogoClick = () => {
     router.push('/');
@@ -69,7 +90,52 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </Link>
             </div>
-            <div className="flex-none flex items-center space-x-4">
+            <div className="flex-none flex items-center gap-3">
+              <button
+                id="theme-toggle-btn"
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+                title={
+                  theme === 'light'
+                    ? 'Switch to dark mode'
+                    : 'Switch to light mode'
+                }
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '999px',
+                  border: '1.5px solid',
+                  borderColor: theme === 'light' ? '#e2e8f0' : '#374151',
+                  background: theme === 'light' ? '#f8fafc' : '#1f2937',
+                  color: theme === 'light' ? '#374151' : '#e5e7eb',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {theme === 'light' ? (
+                  <>
+                    <MoonIcon style={{ width: '15px', height: '15px' }} />
+                    <span>Dark</span>
+                  </>
+                ) : (
+                  <>
+                    <SunIcon
+                      style={{
+                        width: '15px',
+                        height: '15px',
+                        color: '#f59e0b',
+                      }}
+                    />
+                    <span>Light</span>
+                  </>
+                )}
+              </button>
               {user && (
                 <>
                   <div className="avatar">
@@ -97,7 +163,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         {/* Page content */}
-        <main className="flex-grow">
+        <main className="flex-grow bg-base-100 text-base-content">
           <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 my-8">
             {children}
           </div>

@@ -3,6 +3,8 @@ import { v2 as cloudinary } from 'cloudinary';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 
+export const maxDuration = 120;
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -44,25 +46,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File not found' }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
     const result = await new Promise<CloudinaryUploadResult>(
       (resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           {
             resource_type: 'video',
             folder: 'next-cloudinary-uploads',
-            transformation: [{ quality: 'auto', fetch_format: 'mp4' }],
+            eager: [{ quality: 'auto', fetch_format: 'mp4' }],
+            eager_async: true,
+            chunk_size: 6 * 1024 * 1024,
           },
           (error, result) => {
             if (error) reject(error);
             else resolve(result as CloudinaryUploadResult);
           }
         );
-        uploadStream.end(buffer);
+
+        const webStream = file.stream();
+        const reader = webStream.getReader();
+
+        const pump = () => {
+          reader
+            .read()
+            .then(({ done, value }) => {
+              if (done) {
+                uploadStream.end();
+              } else {
+                uploadStream.write(value);
+                pump();
+              }
+            })
+            .catch(reject);
+        };
+
+        pump();
       }
     );
+
     const video = await prisma.video.create({
       data: {
         title,

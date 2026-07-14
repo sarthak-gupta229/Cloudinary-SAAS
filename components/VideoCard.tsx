@@ -69,7 +69,12 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDownload }) => {
   return (
     <>
       <div
-        className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300"
+        className="card bg-base-100 transition-all duration-300"
+        style={{
+          boxShadow: isHovered
+            ? '0 25px 60px rgba(0,0,0,0.5), 0 10px 25px rgba(0,0,0,0.35)'
+            : '0 10px 40px rgba(0,0,0,0.35), 0 4px 15px rgba(0,0,0,0.2)',
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
